@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+
+from Code.heavy_ball import train_with_momentum
 class NeuralNetwork:
     
     def __init__(self, input_dim, hidden_dim, output_dim, l1_lambda):
@@ -36,19 +38,18 @@ class NeuralNetwork:
         num_samples = X.shape[0]
         
         output_layer_error = self.prediction - y_true 
-        dW_output = np.dot(self.h_output.T, output_layer_error) / num_samples + self.l1_regularization(self.weights[1])
-        db_output = np.sum(output_layer_error, axis=0) / num_samples
+        self.dW_output = np.dot(self.h_output.T, output_layer_error) / num_samples + self.l1_regularization(self.weights[1])
+        self.db_output = np.sum(output_layer_error, axis=0) / num_samples
         
         hidden_layer_error = np.dot(output_layer_error, self.weights[1].T)  
         d_hidden_input = hidden_layer_error * self.relu_derivative(self.h_input) 
-        dW_hidden = np.dot(X.T, d_hidden_input) / num_samples + self.l1_regularization(self.weights[0])
-        db_hidden = np.sum(d_hidden_input, axis=0) / num_samples
+        self.dW_hidden = np.dot(X.T, d_hidden_input) / num_samples + self.l1_regularization(self.weights[0])
+        self.db_hidden = np.sum(d_hidden_input, axis=0) / num_samples
         
-        return dW_hidden, db_hidden, dW_output, db_output
+        
 
     def l1_regularization(self, weights):
         return self.l1_lambda * np.sign(weights)
-    
     
     def predict(self, X):
         return np.argmax(self.forward_propagation(X), axis=1)
@@ -62,31 +63,34 @@ class NeuralNetwork:
         cross_entropy_loss = -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
         
         # Compute L1 regularization loss
-        regularization_loss = self.l1_lambda * (np.sum(np.abs(self.weights[0])) + np.sum(np.abs(self.weights[1])))
+        regularization_loss = self.l1_regularization(self.weights)
 
         return cross_entropy_loss + regularization_loss
 
-    def update_parameters(self, dW_hidden, db_hidden, dW_output, db_output):
-            self.weights[0] -= self.learning_rate * dW_hidden
-            self.biases[0] -= self.learning_rate * db_hidden
-            self.weights[1] -= self.learning_rate * dW_output
-            self.biases[1] -= self.learning_rate * db_output
+    def update_parameters(self):
+            self.weights[0] -= self.learning_rate * self.dW_hidden
+            self.biases[0] -= self.learning_rate * self.db_hidden
+            self.weights[1] -= self.learning_rate * self.dW_output
+            self.biases[1] -= self.learning_rate * self.db_output
 
 
-    def train(self, X_train, y_train, X_val, y_val, epochs, learning_rate):
+    def train(self, X_train, y_train, X_val, y_val, epochs, learning_rate, momentum, optimizer = None):
             self.learning_rate = learning_rate
             for epoch in range(epochs):
                 self.forward_propagation(X_train)
                 
-                dW_hidden, db_hidden, dW_output, db_output = self.backward_propagation(X_train, y_train)
+                self.backward_propagation(X_train, y_train)
                 
-                self.update_parameters(dW_hidden, db_hidden, dW_output, db_output)
+                if optimizer == None:
+                    self.update_parameters()
+                else:
+                    optimizer.update(self,momentum)
                 
                 # Compute loss
                 if epoch % 100 == 0:
                     train_loss = self.loss_function(X_train, y_train)
                     val_loss = self.loss_function(X_val, y_val)
                     print(f'Epoch {epoch}: Train Loss = {train_loss}, Validation Loss = {val_loss}')
-
-                # Optionally, you can track the training progress (e.g., using plt.plot)
+                    
             print('Training complete!')
+            
