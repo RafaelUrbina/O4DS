@@ -15,7 +15,7 @@ class BundleMethod:
             # Compute the subgradient (use the gradient from backpropagation)
             subgradient = [self.model.dW_hidden, self.model.dW_output]
             # Compute the function value
-            function_value = self.model.loss_function(self.X_train, self.y_train)
+            function_value = self.model.loss_function(self.model.X_train, self.model.y_train)
             
             # Add the new subgradient and function value to the bundle
             if len(self.bundle) == self.max_bundle_size:
