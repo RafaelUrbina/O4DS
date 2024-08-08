@@ -1,7 +1,4 @@
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
-
-from Code.heavy_ball import train_with_momentum
 class NeuralNetwork:
     
     def __init__(self, input_dim, hidden_dim, output_dim, l1_lambda):
@@ -26,6 +23,9 @@ class NeuralNetwork:
     def softmax(self, z):
         exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))
         return exp_z / np.sum(exp_z, axis=1, keepdims=True)
+    
+    def gradient(self, X, y):
+        return self.backward(X, y)
     
     def forward_propagation(self, X):
         self.h_input = np.dot(X, self.weights[0]) + self.biases[0]
@@ -74,17 +74,21 @@ class NeuralNetwork:
             self.biases[1] -= self.learning_rate * self.db_output
 
 
-    def train(self, X_train, y_train, X_val, y_val, epochs, learning_rate, momentum, optimizer = None):
+    def train(self, X_train, y_train, X_val, y_val, epochs, learning_rate, momentum, optimizerType, optimizer, bundle_size):
             self.learning_rate = learning_rate
+            self.X_train = self.X_train
+            self.y_train = self.y_train
             for epoch in range(epochs):
                 self.forward_propagation(X_train)
                 
                 self.backward_propagation(X_train, y_train)
                 
-                if optimizer == None:
+                if optimizerType == 'None':
                     self.update_parameters()
-                else:
+                elif optimizerType == 'Momentum':
                     optimizer.update(self,momentum)
+                elif optimizerType == 'Bundle':
+                    optimizer.update(self,bundle_size)
                 
                 # Compute loss
                 if epoch % 100 == 0:
