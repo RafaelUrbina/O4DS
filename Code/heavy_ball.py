@@ -1,12 +1,12 @@
 import numpy as np
 
 class HeavyBallOptimizer:
-    def __init__(self, model, momentum, max_iter=1000, grad_tol=1e-12):
+    def __init__(self, model, momentum, max_iter=1000, grad_thresh=1e-12):
         self.model = model
-        self.learning_rate = model. learning_rate
+        self.learning_rate = model.learning_rate
         self.momentum = momentum
         self.max_iter = max_iter
-        self.grad_tol = grad_tol
+        self.grad_thresh = grad_thresh
         self.v_W1 = np.zeros_like(model.W1)
         self.v_b1 = np.zeros_like(model.b1)
         self.v_W2 = np.zeros_like(model.W2)
@@ -34,7 +34,7 @@ class HeavyBallOptimizer:
             grad_norm = self.norm(gradients)
 
             # Check stopping conditions
-            if grad_norm <= self.grad_tol:
+            if grad_norm <= self.grad_thresh:
                 break
 
             # Update velocity and parameters
@@ -52,7 +52,3 @@ class HeavyBallOptimizer:
             return loss_history, best_loss
 
         return self.model.W1, self.model.b1, self.model.W2, self.model.b2
-
-# Example usage:
-# optimizer = HeavyBallOptimizer(model, momentum=0.9)
-# loss_history, best_loss = optimizer.optimize(X_train, y_train)

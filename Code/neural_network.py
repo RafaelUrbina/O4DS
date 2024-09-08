@@ -1,7 +1,10 @@
 import numpy as np
+
+from Code.bundle_methods import BundleMethod
+from Code.heavy_ball import HeavyBallOptimizer
 class NeuralNetwork:
     
-    def __init__(self, input_dim, hidden_dim, output_dim, l1_lambda):
+    def __init__(self, input_dim, hidden_dim, output_dim, l1_lambda, l2_lambda):
         np.random.seed(1)
         W1 = np.random.randn(input_dim, hidden_dim) * 0.01
         b1 = np.zeros((1, hidden_dim))
@@ -10,6 +13,7 @@ class NeuralNetwork:
         self.weights = [W1, W2]
         self.biases = [b1, b2]
         self.l1_lambda = l1_lambda
+        self.l2_lambda = l2_lambda
     
     #ReLU activation function
     def relu(self, x):
@@ -51,6 +55,9 @@ class NeuralNetwork:
     def l1_regularization(self, weights):
         return self.l1_lambda * np.sign(weights)
     
+    def l2_regularization(self, weights):
+        return self.l2_lambda * weights
+    
     def predict(self, X):
         return np.argmax(self.forward_propagation(X), axis=1)
     
@@ -63,9 +70,11 @@ class NeuralNetwork:
         cross_entropy_loss = -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
         
         # Compute L1 regularization loss
-        regularization_loss = self.l1_regularization(self.weights)
+        regularization_L1_loss = self.l1_regularization(self.weights)
+        # Compute L2 regularization loss
+        regularization_L2_loss = self.l2_regularization(self.weights)
 
-        return cross_entropy_loss + regularization_loss
+        return cross_entropy_loss +  regularization_L1_loss +  regularization_L2_loss
 
     def update_parameters(self):
             self.weights[0] -= self.learning_rate * self.dW_hidden
@@ -83,12 +92,12 @@ class NeuralNetwork:
                 
                 self.backward_propagation(X_train, y_train)
                 
-                if optimizerType == 'None':
+                if optimizer is None:
                     self.update_parameters()
-                elif optimizerType == 'Momentum':
-                    optimizer.update(self,momentum)
-                elif optimizerType == 'Bundle':
-                    optimizer.update(self,bundle_size)
+                elif isinstance(optimizer, HeavyBallOptimizer):
+                    optimizer.update(self, momentum)
+                elif isinstance(optimizer, BundleMethod):
+                    optimizer.update(self, bundle_size)
                 
                 # Compute loss
                 if epoch % 100 == 0:
